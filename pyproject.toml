@@ -1,0 +1,59 @@
+[project]
+name = "klix"
+version = "0.1.0"
+description = "Framework for building polished, interactive command-line applications in Python."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Arjun-M", email = "42.arjunm@gmail.com" }
+]
+keywords = [
+    "cli",
+    "terminal",
+    "tui",
+    "framework",
+    "rich",
+    "prompt-toolkit"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: User Interfaces",
+    "Topic :: Terminals"
+]
+dependencies = [
+    "prompt_toolkit",
+    "rich",
+    "pydantic"
+]
+
+[project.urls]
+Homepage = "https://github.com/Arjun-M/klix"
+Repository = "https://github.com/Arjun-M/klix"
+Documentation = "https://github.com/Arjun-M/klix/tree/main/docs"
+Issues = "https://github.com/Arjun-M/klix/issues"
+
+[project.scripts]
+klix = "klix.cli.init_cmd:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = false
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+include = ["klix*"]
