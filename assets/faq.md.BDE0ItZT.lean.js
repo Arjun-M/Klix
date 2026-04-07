@@ -1,1 +1,0 @@
-import{_ as a,m as t,n as i,q as s}from"./chunks/framework.DMDh-7Lg.js";const p=JSON.parse('{"title":"FAQ","description":"","frontmatter":{},"headers":[],"relativePath":"faq.md","filePath":"faq.md"}'),r={name:"faq.md"};function o(l,e,n,h,d,u){return t(),i("div",null,[...e[0]||(e[0]=[s("",46)])])}const m=a(r,[["render",o]]);export{p as __pageData,m as default};
