@@ -124,4 +124,12 @@ State should hold runtime data, not command definitions, renderer objects, or ap
 
 ### Assuming `session.history` is fully managed everywhere
 
-The current implementation exposes the field, but most prompt history behavior still lives inside prompt_toolkit through the input engine.
+`session.history` is the live per-session command history backing the input engine.
+
+That means:
+
+- Up/Down arrow navigation reads from it
+- duplicate consecutive commands are skipped
+- `AppConfig(max_history_size=...)` trims it automatically
+
+The field is still just a Python list, so if you mutate it directly, do it deliberately.

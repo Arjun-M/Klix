@@ -86,8 +86,11 @@ See [Output Components](../components/output.md).
 ```python
 session.ui.layout.header.set("My Tool", color="accent")
 session.ui.layout.status.set("Ready", "Use /help", color="muted")
-session.ui.layout.redraw_ui()
 ```
+
+`header.set(...)` now activates a sticky top region by itself, so later output continues rendering underneath it.
+
+`session.ui.layout.split(direction="horizontal", ratio=0.5)` activates optional left/right panels; use `session.ui.layout.left.print(...)` and `session.ui.layout.right.print(...)` to stream panel content.
 
 ## Realistic Example
 
@@ -118,4 +121,4 @@ Most app code should start at `session.ui`. Reach for renderer or input engine i
 
 ### Mixing layout assumptions with raw printing
 
-The layout system is not a full retained renderer. Use it for structure, but remember that normal output still appends to the terminal.
+The layout system is not a full retained renderer. Use it for structure, but note that sticky header mode captures and replays normal output underneath the header so the top bar stays visible.

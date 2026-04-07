@@ -1,5 +1,6 @@
 node_modules/
 agent.md
+INTERNAL_REFERENCE.md
 GEMINI.md
 AGENTS.md
 package.json
@@ -27,3 +28,4 @@ __pycache__/
 htmlcov/
 .DS_Store
 Thumbs.db
+Documentation/

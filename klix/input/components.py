@@ -116,12 +116,14 @@ class UIInputNamespace:
 
         self.engine.set_mode(InputMode.COMMAND)
         session = PromptSession(history=self.engine.history, completer=self.engine.completer)
-        return await session.prompt_async(
+        return await self.engine._prompt_session_async(
+            session,
             f"{prompt} ",
             default=default,
             placeholder=placeholder or None,
             validator=validator,
             validate_while_typing=False,
+            style=self.engine.build_prompt_style(),
         )
 
     # Password prompts use a throwaway history object so secrets do not leak
@@ -133,7 +135,12 @@ class UIInputNamespace:
 
         self.engine.set_mode(InputMode.PASSWORD)
         session = PromptSession(history=DummyHistory())
-        return await session.prompt_async(f"{prompt} ", is_password=True)
+        return await self.engine._prompt_session_async(
+            session,
+            f"{prompt} ",
+            is_password=True,
+            style=self.engine.build_prompt_style(),
+        )
 
     # Confirm is kept explicit instead of relying on the engine's boolean mode
     # so the empty-input default path remains under this component's control.
@@ -146,7 +153,11 @@ class UIInputNamespace:
         session = PromptSession(history=DummyHistory())
 
         while True:
-            response = await session.prompt_async(f"{question} [{default_suffix}] ")
+            response = await self.engine._prompt_session_async(
+                session,
+                f"{question} [{default_suffix}] ",
+                style=self.engine.build_prompt_style(),
+            )
             response = response.strip().lower()
             if response == "":
                 return default
@@ -237,7 +248,8 @@ class UIInputNamespace:
 
             return _FuzzyValidator()
 
-        text = await session.prompt_async(
+        text = await self.engine._prompt_session_async(
+            session,
             f"{label or 'Search'} ",
             default=default,
             placeholder="Type to filter options",
@@ -245,6 +257,7 @@ class UIInputNamespace:
             complete_while_typing=True,
             validator=_validator(),
             validate_while_typing=False,
+            style=self.engine.build_prompt_style(),
         )
         text = text.strip()
         if text in options:

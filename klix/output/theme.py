@@ -13,6 +13,8 @@ class ThemeConfig:
     accent: Optional[str] = "#00D4FF"
     background: Optional[str] = "default"
     text: Optional[str] = "#F9FAFB"
+    input_background: Optional[str] = None
+    input_text_color: Optional[str] = None
     muted: Optional[str] = "#6B7280"
     info: Optional[str] = "#3B82F6"
     border: Optional[str] = "#374151"

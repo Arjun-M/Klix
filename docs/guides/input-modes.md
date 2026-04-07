@@ -9,10 +9,12 @@ For engine details, see [Input Engine](../concepts/input-engine.md). For the UI 
 The enum currently includes:
 
 - `COMMAND`
-- `TEXT`
 - `MULTILINE`
+- `SELECT`
+- `SEARCH`
 - `CONFIRM`
 - `PASSWORD`
+- `INTERRUPT`
 
 These modes influence how the prompt session behaves:
 
@@ -36,7 +38,7 @@ That fits slash-command driven tools well.
 You can change the mode before calling the prompt engine directly:
 
 ```python
-session.input_engine.set_mode(klix.InputMode.TEXT)
+session.input_engine.set_mode(klix.InputMode.COMMAND)
 note = await session.input_engine.prompt_async("Note: ")
 ```
 
@@ -59,7 +61,14 @@ session.input_engine.set_mode(klix.InputMode.MULTILINE)
 body = await session.input_engine.prompt_async("Body: ")
 ```
 
-In prompt-toolkit mode, Alt+Enter inserts a newline. In CI or non-interactive mode, the fallback behavior is much simpler and reads a line from standard input.
+In interactive terminals:
+
+- `Enter` submits the full block
+- `Shift+Enter` inserts a newline only when the terminal exposes it distinctly
+- `Escape` + `Enter` is the portable newline path Klix supports everywhere
+- `Ctrl+J` also inserts a newline in terminals that emit line-feed directly
+
+In CI or non-interactive mode, the fallback behavior is much simpler and reads a line from standard input.
 
 ## Confirm Mode
 
@@ -95,7 +104,7 @@ For normal app code, prefer `session.ui.input.*`.
 
 ## Common Mistakes
 
-- Assuming `TEXT` mode changes routing behavior. It only changes prompt behavior; your app loop still decides what input means.
+- Assuming mode switching changes command routing. It only changes prompt behavior; your app loop still decides what input means.
 - Expecting multiline editing in CI mode. The fallback path is intentionally simple.
 - Forgetting to restore a previous mode if you manage prompt engine state manually in complex code.
 

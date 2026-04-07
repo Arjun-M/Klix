@@ -13,6 +13,8 @@ Current fields are:
 - `accent`
 - `background`
 - `text`
+- `input_background`
+- `input_text_color`
 - `muted`
 - `info`
 - `border`
@@ -38,9 +40,13 @@ app = klix.App(
         success="#7BD88F",
         warning="#F6C177",
         error="#FF7B72",
+        input_background="#171B24",
+        input_text_color="#F7F9FC",
     ),
 )
 ```
+
+`input_background` is optional. If you leave it unset, Klix keeps the default prompt styling.
 
 ## Why Semantic Colors Matter
 
@@ -93,6 +99,20 @@ session.ui.layout.header.set("OpsTool", color="accent")
 session.ui.layout.status.set("ready", "prod", color="muted")
 ```
 
+Input bar:
+
+```python
+app = klix.App(
+    name="OpsTool",
+    theme=klix.ThemeConfig(
+        input_background="#171B24",
+        input_text_color="#F7F9FC",
+    ),
+)
+```
+
+In capable terminals, Klix applies that background to the active input area through prompt_toolkit styling while keeping cursor and selection behavior intact.
+
 ## Mock Theme Switching
 
 The chat example in the repository shows the usual pattern: mutate the live renderer theme and redraw.
@@ -120,6 +140,7 @@ That means a theme should improve the experience in capable terminals, but your 
 - Passing arbitrary color names that are not in the theme config. Some widgets resolve unknown colors directly, but semantic keys are the safer path.
 - Building meaning into raw color values instead of labels and copy.
 - Expecting a theme update to automatically repaint all previous output. Existing printed lines stay as they were; redraw affects layout and future output.
+- Assuming `input_background` affects fallback or CI prompts the same way. Rich prompt styling is only available in interactive prompt_toolkit mode.
 
 ## Related Reading
 

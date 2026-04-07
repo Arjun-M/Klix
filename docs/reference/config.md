@@ -30,6 +30,7 @@ Current high-level fields:
 - `version`
 - `description`
 - `theme`
+- `config`
 - `persist_session`
 - `session_id`
 - `state_schema`
@@ -94,6 +95,45 @@ If you want deterministic resumes, you need to provide or manage this value in y
 `ThemeConfig` instance controlling semantic colors.
 
 See [Theming](../guides/theming.md).
+
+Useful recent additions:
+
+- `input_background`
+- `input_text_color`
+
+Example:
+
+```python
+theme=klix.ThemeConfig(
+    accent="#4F8CFF",
+    input_background="#171B24",
+    input_text_color="#F5F7FA",
+)
+```
+
+## `config`
+
+`AppConfig` controls runtime prompt behavior that is not part of the semantic theme.
+
+Current fields:
+
+- `history_path`
+- `log_path`
+- `clear_input_on_submit`
+- `max_history_size`
+
+Example:
+
+```python
+config=klix.AppConfig(
+    clear_input_on_submit=True,
+    max_history_size=100,
+)
+```
+
+`clear_input_on_submit` is opt-in and clears the visible prompt line after submit without affecting command execution.
+
+`max_history_size` limits per-session command history used by Up/Down navigation.
 
 ## CLI Process Arguments
 

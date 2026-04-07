@@ -24,11 +24,13 @@ Without that layer, every input component would need to reinvent prompt setup.
 Current responsibilities:
 
 - `PromptSession` setup
-- history via `InMemoryHistory`
+- session-backed command history
 - current `InputMode`
 - `Ctrl+L` binding
 - multiline bindings
 - password mode flagging
+- optional clear-after-submit behavior
+- optional themed prompt styling
 - CI/non-TTY fallback via `stdin.readline()`
 
 ## CI And Non-Interactive Behavior
@@ -61,6 +63,7 @@ Examples:
 
 - `PASSWORD` changes prompt masking
 - `MULTILINE` changes Enter behavior
+- `COMMAND` mode participates in session history navigation
 - selector-style inputs are implemented through prompt_toolkit dialogs in `session.ui.input`, not directly through `prompt_async()`
 
 ## Realistic Example
@@ -79,9 +82,15 @@ async def notes(session: klix.Session):
 Current built-ins:
 
 - `Ctrl+L` clears the screen
+- Up/Down navigate session history through prompt_toolkit
 - in multiline mode:
   - `Escape` + `Enter` inserts a newline
+  - `Ctrl+J` inserts a newline in terminals that emit LF
   - `Enter` submits
+
+When `AppConfig(clear_input_on_submit=True)` is enabled, the active prompt line is also erased after submit.
+
+If `ThemeConfig(input_background=...)` is set, prompt_toolkit applies a themed input bar background in interactive terminals.
 
 ## Pitfalls
 

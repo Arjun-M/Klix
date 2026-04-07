@@ -26,7 +26,7 @@ async def deploy(args: DeployArgs, session: klix.Session):
 
 @app.command("/ask", help="Test MULTILINE and CONFIRM input modes")
 async def ask_mode(session: klix.Session):
-    session.ui.print("Enter multiline text (Esc-Enter to submit):", dim=True)
+    session.ui.print("Enter multiline text (Shift+Enter where supported, otherwise Esc-Enter):", dim=True)
     session.input_engine.set_mode(klix.InputMode.MULTILINE)
     text = await session.input_engine.prompt_async()
     

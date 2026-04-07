@@ -11,6 +11,7 @@ get stitched together into one runtime.
 import asyncio
 import inspect
 import os
+import signal
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable, Optional, Type, Dict, List
@@ -39,6 +40,8 @@ from .help import HelpGenerator
 class AppConfig:
     history_path: Optional[str] = None
     log_path: Optional[str] = None
+    clear_input_on_submit: bool = False
+    max_history_size: Optional[int] = None
 
 
 # App is the framework entry point. It collects developer registrations first,
@@ -201,8 +204,24 @@ class App:
         # line-based stdin/stdout so tests and pipes keep working.
         is_ci = renderer.__class__.__name__ == "CIRenderer"
         
-        session.input_engine = InputEngine(completer=completer, is_ci=is_ci)
+        session.input_engine = InputEngine(
+            completer=completer,
+            is_ci=is_ci,
+            clear_input_on_submit=self.config.clear_input_on_submit,
+            session_history=session.history,
+            max_history_size=self.config.max_history_size,
+            theme=renderer.theme,
+        )
         session.ui = UINamespace(renderer, session.input_engine)
+
+        loop = asyncio.get_running_loop()
+        resize_installed = False
+        if hasattr(signal, "SIGWINCH"):
+            loop.add_signal_handler(
+                signal.SIGWINCH,
+                lambda: asyncio.create_task(self._handle_resize(session)),
+            )
+            resize_installed = True
 
         await self._event_bus.emit("start", session)
 
@@ -240,6 +259,8 @@ class App:
                 print(f"Unexpected error: {e}")
 
         await self._event_bus.emit("exit", session)
+        if resize_installed:
+            loop.remove_signal_handler(signal.SIGWINCH)
         # Save state using the manager
         self._state_manager.save_session_state(session.id, session.state)
         
@@ -247,6 +268,21 @@ class App:
             await asyncio.gather(*session._tasks, return_exceptions=True)
             
         print("Goodbye.")
+
+    async def _handle_resize(self, session: Session) -> None:
+        try:
+            terminal_size = os.get_terminal_size()
+            width, height = terminal_size.columns, terminal_size.lines
+        except OSError:
+            width, height = session.metadata.width, session.metadata.height
+
+        session.metadata.width = width
+        session.metadata.height = height
+
+        session.ui.layout.trigger_redraw()
+        session.ui.layout.redraw_ui()
+
+        await self._event_bus.emit("resize", width, height, session)
 
     # `run()` remains synchronous from the caller's perspective. Klix owns the
     # event loop boundary so app code does not need to call `asyncio.run()`.

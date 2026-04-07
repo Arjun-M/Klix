@@ -4,8 +4,16 @@ This is the glue between high-level UI regions and the renderer. It tracks
 header/status state and performs coarse redraws when those regions change.
 """
 
-from typing import Any
-from .regions import Header, MainContent, StatusBar
+from typing import Any, List
+from .regions import Header, MainContent, StatusBar, Panel
+try:
+    from rich.columns import Columns
+    from rich.panel import Panel as RichPanel
+    from rich.text import Text
+except ImportError:
+    Columns = None
+    RichPanel = None
+    Text = None
 
 
 class LayoutEngine:
@@ -14,71 +22,167 @@ class LayoutEngine:
         self.header = Header("HEADER", ui)
         self.main = MainContent(ui)
         self.status = StatusBar(ui)
+        self.left = Panel("LEFT", ui)
+        self.right = Panel("RIGHT", ui)
         self._needs_redraw = False
-        self._last_header_content: str = ""
-        self._last_status_left: str = ""
-        self._last_status_right: str = ""
-        
+        self._main_buffer: List[dict[str, Any]] = []
+        self._split_active = False
+        self._split_ratio = 0.5
+        self._split_direction = "horizontal"
+        self._is_redrawing = False
+
+    @property
+    def split_active(self) -> bool:
+        return self._split_active
+
+    def has_sticky_header(self) -> bool:
+        return bool(self.header.content)
+
+    def should_capture_output(self) -> bool:
+        return self.has_sticky_header() and not self._is_redrawing
+
     # Region objects call this when they change. The redraw is deferred so the
     # caller does not need to think about the mechanics immediately.
     def trigger_redraw(self):
         """Signals that the UI needs a redraw."""
         self._needs_redraw = True
 
+    def append_main_output(
+        self,
+        text: str,
+        color: str = None,
+        bold: bool = False,
+        dim: bool = False,
+        italic: bool = False,
+        end: str = "\n",
+    ):
+        self._main_buffer.append(
+            {
+                "text": text,
+                "color": color,
+                "bold": bold,
+                "dim": dim,
+                "italic": italic,
+                "end": end,
+            }
+        )
+        self.trigger_redraw()
+        self.redraw_ui()
+
+    def clear_main_output(self):
+        self._main_buffer.clear()
+        self.trigger_redraw()
+
+    def split(self, *, direction: str = "horizontal", ratio: float = 0.5):
+        if direction not in {"horizontal", "vertical"}:
+            raise ValueError("unsupported split direction")
+        self._split_active = True
+        self._split_direction = direction
+        self._split_ratio = max(0.0, min(1.0, ratio))
+        self.trigger_redraw()
+
+    def disable_split(self):
+        self._split_active = False
+        self._split_ratio = 0.5
+        self._split_direction = "horizontal"
+        self.trigger_redraw()
+
+    def append_panel_output(
+        self,
+        panel: str,
+        text: str,
+        color: str = None,
+        bold: bool = False,
+        dim: bool = False,
+        italic: bool = False,
+        end: str = "\n",
+    ):
+        target = self.left if panel == "LEFT" else self.right
+        target.buffer.append(
+            {
+                "text": text,
+                "color": color,
+                "bold": bold,
+                "dim": dim,
+                "italic": italic,
+                "end": end,
+            }
+        )
+        self.trigger_redraw()
+        self.redraw_ui()
+
+    def _render_panel_text(self, panel: Panel) -> "Text":
+        if Text is None:
+            return None
+        rendered = Text()
+        for entry in panel.buffer:
+            style = entry.get("color")
+            rendered.append(entry.get("text", ""), style=style)
+            rendered.append(entry.get("end", ""))
+        if not rendered.plain:
+            rendered.append("\n")
+        return rendered
+
     # This redraw strategy is intentionally blunt. It is not trying to be a
     # full-screen terminal framework; it just keeps static regions coherent.
     def redraw_ui(self):
-        """Performs a full redraw of the static UI elements if needed.
-        This is a basic implementation that just clears and redraws,
-        not a true persistent live region.
-        """
+        """Performs a full redraw of the sticky layout regions when needed."""
         if not self._needs_redraw:
             return
 
         self._needs_redraw = False
-        
-        current_header_content = self.header.content or ""
-        current_status_left = self.status.left or ""
-        current_status_right = self.status.right or ""
+        self._is_redrawing = True
+        try:
+            self.ui._clear_direct()
+            self.ui.move_cursor(0, 0)
 
-        # Avoid repainting when the logical layout state is unchanged.
-        if (current_header_content == self._last_header_content and
-            current_status_left == self._last_status_left and
-            current_status_right == self._last_status_right):
-            return
+            console_width = self.ui.renderer.console.size.width if hasattr(self.ui.renderer, "console") else 80
 
-        # The current implementation redraws by clearing and replaying the
-        # static regions. That is simple, but it is also why main content is
-        # treated as append-only output elsewhere.
-        self.ui.clear()
-        self.ui.move_cursor(0, 0) # Move to top-left
+            if self.header.content:
+                self.ui._print_direct(self.header.content, color=self.header.color)
+                if hasattr(self.ui.renderer, "console"):
+                    self.ui._print_direct("-" * console_width, color=self.header.color)
 
-        # Header is rendered first so it behaves like a fixed top region.
-        if self.header.content:
-            self.ui.print(self.header.content, color=self.header.color)
-            if hasattr(self.ui.renderer, "console"): # Add a separator only if rich is active
-                console_width = self.ui.renderer.console.size.width
-                self.ui.print("-" * console_width, color=self.header.color)
-            self._last_header_content = self.header.content
-        else:
-            self._last_header_content = ""
+            if not self._split_active:
+                for entry in self._main_buffer:
+                    self.ui._print_direct(**entry)
+            else:
+                if hasattr(self.ui.renderer, "console") and Columns and RichPanel and Text:
+                    console_width = self.ui.renderer.console.size.width
+                    left_width = max(10, int(console_width * self._split_ratio))
+                    right_width = max(10, console_width - left_width - 1)
+                    left_render = self._render_panel_text(self.left) or Text()
+                    right_render = self._render_panel_text(self.right) or Text()
+                    panels = [
+                        RichPanel(
+                            left_render,
+                            title="Left",
+                            border_style=self.ui.renderer.theme.border or "border",
+                            width=left_width,
+                        ),
+                        RichPanel(
+                            right_render,
+                            title="Right",
+                            border_style=self.ui.renderer.theme.border or "border",
+                            width=right_width,
+                        ),
+                    ]
+                    self.ui.renderer.console.print(
+                        Columns(panels, expand=True, padding=(0, 1), equal=False, column_first=False),
+                    )
+                else:
+                    for entry in self.left.buffer:
+                        self.ui._print_direct(**entry)
+                    self.ui._print_direct("---------------- split ----------------")
+                    for entry in self.right.buffer:
+                        self.ui._print_direct(**entry)
 
-        # Main content is still owned by the normal print path. This file only
-        # manages the coarse layout regions around it.
+            if self.status.left or self.status.right:
+                console_width = self.ui.renderer.console.size.width if hasattr(self.ui.renderer, "console") else 80
+                status_line = f"{self.status.left:<{console_width // 2}}{self.status.right:>{console_width // 2}}"
+                self.ui._print_direct(status_line, color=self.status.color)
 
-        # Status is rendered last to simulate a bottom summary line.
-        if self.status.left or self.status.right:
-            # This is not truly bottom-anchored yet; it is an append-only
-            # compromise until the layout system grows a richer live model.
-            console_width = self.ui.renderer.console.size.width if hasattr(self.ui.renderer, "console") else 80 # Default to 80 if no rich console
-            status_line = f"{current_status_left:<{console_width // 2}}{current_status_right:>{console_width // 2}}"
-            self.ui.print(status_line, color=self.status.color)
-            self._last_status_left = self.status.left
-            self._last_status_right = self.status.right
-        else:
-            self._last_status_left = ""
-            self._last_status_right = ""
-
-        # prompt_toolkit expects the input cursor to land after any redraw
-        # output; this handoff is intentionally approximate.
-        self.ui.move_cursor_to_input_line() # This method needs to be added to UINamespace
+            if self.has_sticky_header():
+                self.ui.move_cursor_to_input_line()
+        finally:
+            self._is_redrawing = False

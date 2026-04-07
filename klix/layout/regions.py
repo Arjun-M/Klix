@@ -8,8 +8,6 @@ delegate actual rendering to the UI namespace.
 from typing import Any, Optional
 
 
-# Regions are just state holders plus a redraw signal. The engine decides how
-# that state is actually painted to the screen.
 class Region:
     def __init__(self, name: str, ui: Any):
         self.name = name
@@ -21,27 +19,45 @@ class Region:
         self.content = content
         self.color = color
         self.ui.layout.trigger_redraw()
+        self.ui.layout.redraw_ui()
 
     def clear(self):
         self.content = None
         self.color = None
         self.ui.layout.trigger_redraw()
+        self.ui.layout.redraw_ui()
+
 
 class Header(Region):
     pass
 
 
-# Main content is intentionally the simplest region because most output still
-# flows through normal print/stream calls.
+class Panel:
+    def __init__(self, name: str, ui: Any):
+        self.name = name
+        self.ui = ui
+        self.buffer: list[dict[str, Any]] = []
+
+    def print(self, *args, **kwargs):
+        self.ui.layout.append_panel_output(self.name, *args, **kwargs)
+
+    def stream(self, *args, **kwargs):
+        return self.print(*args, **kwargs)
+
+
 class MainContent:
     def __init__(self, ui: Any):
         self.ui = ui
 
     def print(self, *args, **kwargs):
-        self.ui.print(*args, **kwargs)
+        if self.ui.layout.split_active:
+            self.ui.layout.left.print(*args, **kwargs)
+        else:
+            self.ui.print(*args, **kwargs)
 
     def stream(self, *args, **kwargs):
-        return self.ui.stream(*args, **kwargs)
+        return self.print(*args, **kwargs)
+
 
 class StatusBar:
     def __init__(self, ui: Any):
@@ -55,9 +71,11 @@ class StatusBar:
         self.right = right
         self.color = color
         self.ui.layout.trigger_redraw()
+        self.ui.layout.redraw_ui()
 
     def clear(self):
         self.left = ""
         self.right = ""
         self.color = None
         self.ui.layout.trigger_redraw()
+        self.ui.layout.redraw_ui()
