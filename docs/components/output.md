@@ -84,6 +84,9 @@ session.ui.output.markdown("""
 session.ui.output.code("print('hello from klix')", lang="python")
 ```
 
+![Markdown Rendering](../../images/markdown-rendering.png)
+![Syntax Highlighted Code](../../images/syntax-highlighted-code.png)
+
 Fallback renderers print plain text instead of rich formatting.
 
 ## JSON And Tree
@@ -104,6 +107,9 @@ session.ui.output.tree(
 )
 ```
 
+![JSON Output](../../images/deployment-result-json.png)
+![Tree View](../../images/tree-view.png)
+
 Use `json(...)` when exact structure matters. Use `tree(...)` when readability matters more than strict formatting.
 
 ## Diff Output
@@ -116,6 +122,8 @@ session.ui.output.diff(
     "version = 2\nstatus = complete",
 )
 ```
+
+![Diff View](../../images/diff-view.png)
 
 It is intentionally simple and semantic:
 

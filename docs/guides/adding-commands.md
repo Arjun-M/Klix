@@ -184,6 +184,8 @@ def help_cmd(session: klix.Session) -> None:
     )
 ```
 
+![Generated Help Table](../../images/help-table.png)
+
 This is the same approach used by the shipped examples.
 
 ## Common Mistakes

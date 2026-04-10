@@ -100,6 +100,8 @@ Example input:
 /deploy production --force
 ```
 
+![Deployment Configuration Panel](../../images/deployment-config-panel.png)
+
 Internally, Klix tokenizes the input, maps positionals to schema fields in declaration order, and then lets Pydantic coerce and validate values. That flow is described in [Router](../concepts/router.md).
 
 ## Step 3: Add Better Startup Output

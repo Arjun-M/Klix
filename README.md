@@ -2,7 +2,36 @@
 
 *CLI interfaces that just click.*
 
+![Klix Interface Example](images/klix.png)
+
 Klix is a Python framework for building polished, interactive command-line applications. It combines command routing, typed session state, prompt-driven input, rich rendering, middleware, events, and lightweight layout primitives into one developer-facing toolkit.
+
+<details>
+<summary><b>View UI Gallery</b></summary>
+
+### Help Generation
+![Help Table](images/help-table.png)
+
+### Interactive Select
+![Select Dialog](images/select-dialog.png)
+
+### Error Handling
+![Error Display](images/error-display.png)
+
+### Syntax Highlighting
+![Syntax Highlighted Code](images/syntax-highlighted-code.png)
+
+### Tree & JSON Views
+![Tree View](images/tree-view.png)
+![Deployment Result JSON](images/deployment-result-json.png)
+
+### Diff View
+![Diff View](images/diff-view.png)
+
+### Markdown Rendering
+![Markdown Rendering](images/markdown-rendering.png)
+
+</details>
 
 ## Why Klix
 

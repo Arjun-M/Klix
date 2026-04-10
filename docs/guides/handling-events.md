@@ -95,6 +95,8 @@ def on_error(error: Exception, session: klix.Session) -> None:
     )
 ```
 
+![Error Display Panel](../../images/error-display.png)
+
 Keep the handler lightweight. The runtime already caught the exception; your event handler should focus on visibility or cleanup.
 
 ## Shutdown Work

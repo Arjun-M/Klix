@@ -215,6 +215,22 @@ session.ui.layout.redraw_ui()
 
 Use layout for header and status regions. Print long-running output into the main area.
 
+### Split-Pane Layout (Advanced)
+
+Klix supports a dual-panel view within the main area:
+
+```python
+# Activate split (horizontal by default, 50/50 ratio)
+session.ui.layout.split(direction="horizontal", ratio=0.4)
+
+# Print to specific panels
+session.ui.layout.left.print("Navigation", color="accent")
+session.ui.layout.right.print("Editor Content", color="text")
+
+# Disable and return to single-column
+session.ui.layout.disable_split()
+```
+
 ## Key APIs
 
 ### `app.command(...)`

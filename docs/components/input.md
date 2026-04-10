@@ -84,6 +84,8 @@ environment = await session.ui.input.select(
 )
 ```
 
+![Select Dialog](../../images/select-dialog.png)
+
 Internally this uses prompt-toolkit’s radio-list dialog in interactive terminals.
 
 Pitfalls:

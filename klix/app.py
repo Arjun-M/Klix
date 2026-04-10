@@ -179,6 +179,35 @@ class App:
             await self._event_bus.emit("error", e, ctx.session)
             print(f"Error: {e}")
 
+    # Creates a fully initialized session with state, metadata, renderer,
+    # input engine, and UI namespace. This is useful for testing, demos,
+    # and custom interaction loops.
+    async def create_session(self, session_id: Optional[str] = None) -> Session:
+        state_instance = self._state_manager.load_session_state(session_id=session_id)
+        session = Session(
+            id=session_id,
+            state=state_instance,
+            metadata=self._build_terminal_metadata(),
+        )
+
+        completer = KlixCompleter(self._commands, self._custom_completers, session)
+        renderer = get_renderer(self.theme)
+
+        # CI mode avoids interactive prompt_toolkit behavior and falls back to
+        # line-based stdin/stdout so tests and pipes keep working.
+        is_ci = renderer.__class__.__name__ == "CIRenderer"
+
+        session.input_engine = InputEngine(
+            completer=completer,
+            is_ci=is_ci,
+            clear_input_on_submit=self.config.clear_input_on_submit,
+            session_history=session.history,
+            max_history_size=self.config.max_history_size,
+            theme=renderer.theme,
+        )
+        session.ui = UINamespace(renderer, session.input_engine)
+        return session
+
     # `_run_async` is the concrete session lifecycle. It creates the session,
     # binds renderer/input/ui objects, emits lifecycle events, then drives the
     # read/parse/middleware/dispatch loop until exit.
@@ -190,29 +219,7 @@ class App:
             import uuid
             session_id = str(uuid.uuid4())
 
-        state_instance = self._state_manager.load_session_state(session_id=session_id)
-        session = Session(
-            id=session_id,
-            state=state_instance,
-            metadata=self._build_terminal_metadata(),
-        )
-        
-        completer = KlixCompleter(self._commands, self._custom_completers, session)
-        renderer = get_renderer(self.theme)
-        
-        # CI mode avoids interactive prompt_toolkit behavior and falls back to
-        # line-based stdin/stdout so tests and pipes keep working.
-        is_ci = renderer.__class__.__name__ == "CIRenderer"
-        
-        session.input_engine = InputEngine(
-            completer=completer,
-            is_ci=is_ci,
-            clear_input_on_submit=self.config.clear_input_on_submit,
-            session_history=session.history,
-            max_history_size=self.config.max_history_size,
-            theme=renderer.theme,
-        )
-        session.ui = UINamespace(renderer, session.input_engine)
+        session = await self.create_session(session_id=session_id)
 
         loop = asyncio.get_running_loop()
         resize_installed = False
